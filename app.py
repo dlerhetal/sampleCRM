@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 import pandas as pd
 import os
+import json
 
 app = Flask(__name__)
 
@@ -20,20 +21,43 @@ def load_data():
     for key, filename in files.items():
         file_path = os.path.join(DATA_DIR, filename)
         if os.path.exists(file_path):
-            # The header is on the 4th row (index 3)
             df = pd.read_csv(file_path, header=3)
-            # Drop the first column if it's unnamed, which happens with a leading comma
-            if df.columns[0].startswith('Unnamed:'):
-                df = df.iloc[:, 1:]
+            df = df.loc[:, ~df.columns.str.startswith('Unnamed:')]
+            df.dropna(axis=1, how='all', inplace=True)
             data[key] = df
     return data
 
 @app.route('/')
 def index():
-    data = load_data()
-    # Converting dataframes to HTML tables to display them easily
-    tables = {key: df.to_html(classes='table table-striped', index=False) for key, df in data.items()}
-    return render_template('index.html', tables=tables)
+    all_data = load_data()
+    tables = {}
+    
+    # Create HTML tables with data attributes for interactivity
+    for key in ['organizations', 'contacts', 'opportunities']:
+        if key in all_data:
+            df = all_data[key].fillna('')
+            # The column to use for matching (e.g., 'Name' for organizations)
+            # This is a simplification; a robust solution would use unique IDs.
+            interactive_col = 'Name' if key in ['organizations', 'opportunities'] else 'Full Name (First, Last)'
+            if interactive_col not in df.columns:
+                 interactive_col = df.columns[0]
+
+            tables[key] = df.to_html(
+                classes='table table-hover',
+                index=False,
+                border=0,
+                table_id=f'{key}-table',
+                render_links=True,
+                escape=False
+            )
+
+    # Prepare interactions data as a JSON object for JavaScript
+    interactions_json = "[]"
+    if 'interactions' in all_data:
+        interactions_df = all_data['interactions'].fillna('')
+        interactions_json = interactions_df.to_json(orient='records')
+
+    return render_template('index.html', tables=tables, interactions_json=interactions_json)
 
 if __name__ == '__main__':
     app.run(debug=True)

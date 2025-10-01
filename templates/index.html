@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BnL CRM</title>
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table-hover tbody tr:hover {
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="container-fluid mt-4">
@@ -14,45 +18,97 @@
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="organizations-tab" data-bs-toggle="tab" data-bs-target="#organizations" type="button" role="tab">Organizations</button>
+                <button class="nav-link active" id="organizations-tab" data-bs-toggle="tab" data-bs-target="#organizations-pane" type="button" role="tab">Organizations</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts" type="button" role="tab">Contacts</button>
+                <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts-pane" type="button" role="tab">Contacts</button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="opportunities-tab" data-bs-toggle="tab" data-bs-target="#opportunities" type="button" role="tab">Opportunities</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="interactions-tab" data-bs-toggle="tab" data-bs-target="#interactions" type="button" role="tab">Interactions</button>
+                <button class="nav-link" id="opportunities-tab" data-bs-toggle="tab" data-bs-target="#opportunities-pane" type="button" role="tab">Opportunities</button>
             </li>
         </ul>
 
         <!-- Tabs Content -->
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="organizations" role="tabpanel">
-                <div class="table-responsive mt-3">
-                    {{ tables['organizations'] | safe }}
-                </div>
+        <div class="tab-content p-3" id="myTabContent">
+            <div class="tab-pane fade show active" id="organizations-pane" role="tabpanel">
+                <div class="table-responsive">{{ tables.get('organizations', '') | safe }}</div>
             </div>
-            <div class="tab-pane fade" id="contacts" role="tabpanel">
-                <div class="table-responsive mt-3">
-                    {{ tables['contacts'] | safe }}
-                </div>
+            <div class="tab-pane fade" id="contacts-pane" role="tabpanel">
+                <div class="table-responsive">{{ tables.get('contacts', '') | safe }}</div>
             </div>
-            <div class="tab-pane fade" id="opportunities" role="tabpanel">
-                <div class="table-responsive mt-3">
-                    {{ tables['opportunities'] | safe }}
-                </div>
+            <div class="tab-pane fade" id="opportunities-pane" role="tabpanel">
+                <div class="table-responsive">{{ tables.get('opportunities', '') | safe }}</div>
             </div>
-            <div class="tab-pane fade" id="interactions" role="tabpanel">
-                <div class="table-responsive mt-3">
-                    {{ tables['interactions'] | safe }}
+        </div>
+    </div>
+
+    <!-- Interactions Modal -->
+    <div class="modal fade" id="interactionsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Interactions for <span id="modalItemName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="list-group" id="interactionsList"></ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const interactions = {{ interactions_json | safe }};
+        const interactionsModal = new bootstrap.Modal(document.getElementById('interactionsModal'));
+
+        function showInteractions(itemName, itemType) {
+            const list = document.getElementById('interactionsList');
+            list.innerHTML = '';
+            document.getElementById('modalItemName').textContent = itemName;
+
+            let relatedInteractions = [];
+            if (itemType === 'organization') {
+                relatedInteractions = interactions.filter(i => i.Organization === itemName);
+            } else if (itemType === 'contact') {
+                relatedInteractions = interactions.filter(i => i.Contact === itemName);
+            } else if (itemType === 'opportunity') {
+                relatedInteractions = interactions.filter(i => i.Opportunity === itemName);
+            }
+
+            if (relatedInteractions.length > 0) {
+                relatedInteractions.forEach(i => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item';
+                    li.innerHTML = `<strong>${i.Interaction}</strong> on ${i.Date} with ${i.Contact}<br><small>Regarding: ${i.Opportunity}</small>`;
+                    list.appendChild(li);
+                });
+            } else {
+                list.innerHTML = '<li class="list-group-item">No interactions found.</li>';
+            }
+            
+            interactionsModal.show();
+        }
+
+        function addClickListeners(tableId, itemType, columnName) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            const headers = [...table.querySelectorAll('thead th')].map(th => th.textContent);
+            const nameIndex = headers.indexOf(columnName);
+            if (nameIndex === -1) return;
+
+            table.querySelectorAll('tbody tr').forEach(row => {
+                const itemName = row.cells[nameIndex].textContent;
+                row.addEventListener('click', () => showInteractions(itemName, itemType));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addClickListeners('organizations-table', 'organization', 'Name');
+            addClickListeners('contacts-table', 'contact', 'Full Name (First, Last)');
+            addClickListeners('opportunities-table', 'opportunity', 'Name');
+        });
+    </script>
 </body>
 </html>
