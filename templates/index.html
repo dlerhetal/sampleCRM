@@ -6,39 +6,28 @@
     <title>BnL CRM</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .table-hover tbody tr:hover {
-            cursor: pointer;
-        }
+        .table-hover tbody tr:hover { cursor: pointer; }
     </style>
 </head>
 <body>
     <div class="container-fluid mt-4">
-        <h1 class="mb-4">BnL Sample CRM</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>BnL Sample CRM</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addEntryModal">+ Add New Entry</button>
+        </div>
 
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="organizations-tab" data-bs-toggle="tab" data-bs-target="#organizations-pane" type="button" role="tab">Organizations</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts-pane" type="button" role="tab">Contacts</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="opportunities-tab" data-bs-toggle="tab" data-bs-target="#opportunities-pane" type="button" role="tab">Opportunities</button>
-            </li>
+            <li class="nav-item" role="presentation"><button class="nav-link active" id="organizations-tab" data-bs-toggle="tab" data-bs-target="#organizations-pane" type="button" role="tab">Organizations</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="contacts-tab" data-bs-toggle="tab" data-bs-target="#contacts-pane" type="button" role="tab">Contacts</button></li>
+            <li class="nav-item" role="presentation"><button class="nav-link" id="opportunities-tab" data-bs-toggle="tab" data-bs-target="#opportunities-pane" type="button" role="tab">Opportunities</button></li>
         </ul>
 
         <!-- Tabs Content -->
         <div class="tab-content p-3" id="myTabContent">
-            <div class="tab-pane fade show active" id="organizations-pane" role="tabpanel">
-                <div class="table-responsive">{{ tables.get('organizations', '') | safe }}</div>
-            </div>
-            <div class="tab-pane fade" id="contacts-pane" role="tabpanel">
-                <div class="table-responsive">{{ tables.get('contacts', '') | safe }}</div>
-            </div>
-            <div class="tab-pane fade" id="opportunities-pane" role="tabpanel">
-                <div class="table-responsive">{{ tables.get('opportunities', '') | safe }}</div>
-            </div>
+            <div class="tab-pane fade show active" id="organizations-pane" role="tabpanel"><div class="table-responsive">{{ tables.get('organizations', '') | safe }}</div></div>
+            <div class="tab-pane fade" id="contacts-pane" role="tabpanel"><div class="table-responsive">{{ tables.get('contacts', '') | safe }}</div></div>
+            <div class="tab-pane fade" id="opportunities-pane" role="tabpanel"><div class="table-responsive">{{ tables.get('opportunities', '') | safe }}</div></div>
         </div>
     </div>
 
@@ -46,22 +35,142 @@
     <div class="modal fade" id="interactionsModal" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Interactions for <span id="modalItemName"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <ul class="list-group" id="interactionsList"></ul>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">Interactions for <span id="modalItemName"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body"><ul class="list-group" id="interactionsList"></ul></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Entry Modal -->
+    <div class="modal fade" id="addEntryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form id="addEntryForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add New Entry</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="entryType" class="form-label">Entry Type</label>
+                            <select class="form-select" id="entryType">
+                                <option selected disabled>Choose...</option>
+                                <option value="Organization">Organization</option>
+                                <option value="Contact">Contact</option>
+                                <option value="Opportunity">Opportunity</option>
+                            </select>
+                        </div>
+                        <div id="dynamicFormFields"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Data from backend
         const interactions = {{ interactions_json | safe }};
-        const interactionsModal = new bootstrap.Modal(document.getElementById('interactionsModal'));
+        const dropdownData = {{ dropdown_data | safe }};
 
+        // Modals
+        const interactionsModal = new bootstrap.Modal(document.getElementById('interactionsModal'));
+        const addEntryModal = new bootstrap.Modal(document.getElementById('addEntryModal'));
+
+        // --- Interactions Modal Logic ---
+        function showInteractions(itemName, itemType) { /* ... existing code ... */ }
+        function addClickListeners(tableId, itemType, columnName) { /* ... existing code ... */ }
+
+        // --- Add Entry Form Logic ---
+        const formFieldsContainer = document.getElementById('dynamicFormFields');
+        const entryTypeSelect = document.getElementById('entryType');
+
+        const allFields = {
+            Organization: ['Priority', 'Name', 'Type', 'Acct. Manager', 'Website', 'Linkedin', 'Phone', 'Street Address', 'City', 'State', 'Zip'],
+            Contact: ['Priority', 'Full Name (First, Last)', 'Type', 'Acct. Manager', 'Organization', 'Position', 'Email', 'Linkedin', 'Phone'],
+            Opportunity: ['Priority', 'Name', 'Acct. Manager', 'Organization', 'Status', 'Stage', 'Loss Reason', 'Source', 'Value', 'Probability', 'Exp. Close']
+        };
+
+        function createFormField(name) {
+            const dropdownName = (name === 'Deal Owner') ? 'Acct. Manager' : name;
+            const options = dropdownData[dropdownName];
+
+            let fieldHtml = '<div class="mb-3">';
+            fieldHtml += `<label for="field-${name}" class="form-label">${name}</label>`;
+            if (options) {
+                fieldHtml += `<select class="form-select dynamic-select" id="field-${name}" name="${name}" data-field-name="${name}">`;
+                fieldHtml += '<option value="" selected disabled>Choose...</option>';
+                options.forEach(opt => fieldHtml += `<option value="${opt}">${opt}</option>`);
+                // Add 'Add New' for specific dynamic dropdowns
+                if (name === 'Organization') {
+                    fieldHtml += '<option value="__add_new__" data-entry-type="Organization">+ Add New Organization</option>';
+                }
+                fieldHtml += '</select>';
+            } else {
+                fieldHtml += `<input type="text" class="form-control" id="field-${name}" name="${name}">`;
+            }
+            fieldHtml += '</div>';
+            return fieldHtml;
+        }
+
+        formFieldsContainer.addEventListener('change', function(e) {
+            if (e.target.classList.contains('dynamic-select')) {
+                if (e.target.value === '__add_new__') {
+                    const entryType = e.target.options[e.target.selectedIndex].dataset.entryType;
+                    if (entryType) {
+                        // Pre-select the entry type for the new form and regenerate fields
+                        entryTypeSelect.value = entryType;
+                        entryTypeSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
+        });
+
+        entryTypeSelect.addEventListener('change', (e) => {
+            formFieldsContainer.innerHTML = '';
+            const selectedType = e.target.value;
+            const fields = allFields[selectedType];
+            if (fields) {
+                fields.forEach(fieldName => {
+                    formFieldsContainer.innerHTML += createFormField(fieldName);
+                });
+            }
+        });
+
+        document.getElementById('addEntryForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const payload = Object.fromEntries(formData.entries());
+            const entryType = entryTypeSelect.value;
+
+            fetch('/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: entryType, payload: payload })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addEntryModal.hide();
+                    location.reload(); // Easiest way to see the new data
+                } else {
+                    alert('Error saving entry: ' + data.message);
+                }
+            }).catch(err => alert('An error occurred.'));
+        });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            addClickListeners('organizations-table', 'organization', 'Name');
+            addClickListeners('contacts-table', 'contact', 'Full Name (First, Last)');
+            addClickListeners('opportunities-table', 'opportunity', 'Name');
+        });
+
+        // --- Full Interaction Logic (to avoid being overwritten) ---
         function showInteractions(itemName, itemType) {
             const list = document.getElementById('interactionsList');
             list.innerHTML = '';
@@ -69,7 +178,9 @@
 
             let relatedInteractions = [];
             if (itemType === 'organization') {
-                relatedInteractions = interactions.filter(i => i.Organization === itemName);
+                // This is an indirect lookup. We find contacts for the org, then interactions for those contacts.
+                const orgContacts = dropdownData.Organization.filter(c => c.Organization === itemName).map(c => c['Full Name (First, Last)']);
+                relatedInteractions = interactions.filter(i => orgContacts.includes(i.Contact));
             } else if (itemType === 'contact') {
                 relatedInteractions = interactions.filter(i => i.Contact === itemName);
             } else if (itemType === 'opportunity') {
@@ -104,11 +215,6 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            addClickListeners('organizations-table', 'organization', 'Name');
-            addClickListeners('contacts-table', 'contact', 'Full Name (First, Last)');
-            addClickListeners('opportunities-table', 'opportunity', 'Name');
-        });
     </script>
 </body>
 </html>
